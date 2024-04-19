@@ -104,23 +104,37 @@ class SwaggerJSONResolution:
                 fields = jsonpath.jsonpath(model_v, f'$.properties')
                 for field in fields:
                     for k, v in field.items():
-                        k_d = {}
-                        k_d[k] = v.get('type')
+                        k_d = {k: v.get('type')}
                         dict_a[model].update(k_d)
             schema_list.append(dict_a)
         return schema_list
+
+    def analysis_components_schemas(self, ref):
+        # 递归生成嵌套的请求body
+        schema = ref.split('/')[-1]
+        schema_d = self.get_swagger_api_docs_response().get('components').get('schemas').get(schema).get('properties')
+        body = {}
+        for k, v in schema_d.items():
+            if v.get('type') == 'array' and v.get('items').get('$ref'):
+                k_d = {k: [self.analysis_components_schemas(v.get('items').get('$ref'))]}
+                body.update(k_d)
+            elif v.get('type') == 'array':
+                k_d = {k: []}
+                body.update(k_d)
+            else:
+                k_d = {k: v.get('type')}
+                body.update(k_d)
+        return body
+
+
 
     def generate_body(self):
         data = self.clen_data()
         for c in data:
             for interface in c.get('interfaces'):
                 if interface.get('requestBody'):
-                    for model in self.clen_data_body():
-                        for k, v in model.items():
-                            if interface.get('requestBody')[0].split('/')[-1] == k:
-                                interface['body'] = v
+                    interface['body'] = self.analysis_components_schemas(interface.get('requestBody')[0])
         return data
-
 
     def main(self):
         """
