@@ -96,21 +96,6 @@ class SwaggerJSONResolution:
             class_list.append(class_data)
         return class_list
 
-    def clen_data_body(self):
-        response = self.get_swagger_api_docs_response()
-        schemas = jsonpath.jsonpath(response, '$.components.schemas')
-        schema_list = []
-        for schema in schemas:
-            dict_a = {}
-            for model, model_v in schema.items():
-                dict_a[model] = {}
-                fields = jsonpath.jsonpath(model_v, f'$.properties')
-                for field in fields:
-                    for k, v in field.items():
-                        k_d = {k: v.get('type')}
-                        dict_a[model].update(k_d)
-            schema_list.append(dict_a)
-        return schema_list
 
     def analysis_components_schemas(self, ref):
         # 递归生成嵌套的请求body
