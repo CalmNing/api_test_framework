@@ -26,7 +26,7 @@ class {{class_name}}:
         resource = f'{{uri}}'
         {{# body}}body = body if body else {{body}} {{/ body}}
         {{# query_params}}params = {{query_params}}{{/ query_params}}
-        response = item_fixture.request('{{method}}', resource{{# body}}, body{{/ body}}{{# query_params}}, params = params{{/ query_params}})
+        response = item_fixture.request('{{method}}', resource{{# body}}, body{{/ body}}{{# query_params}}, params=params{{/ query_params}})
         return response
 
 {{/ interfaces}}
