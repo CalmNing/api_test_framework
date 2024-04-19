@@ -62,7 +62,7 @@ class SwaggerJSONResolution:
                     if method_v.get('tags')[0] == file_name:
                         summary = method_v.get('summary', None)
                         parameters = method_v.get('parameters', None)
-                        requestBody = method_v.get('requestBody', None)
+                        request_body = method_v.get('requestBody', None)
                         function_data = {
                             'function_name': uri.replace('/', '_').replace('-', '_')
                             .replace('{', '').replace('}', ''),
@@ -71,12 +71,15 @@ class SwaggerJSONResolution:
                             "summary": summary,
                             'method': method,
                             'path': [],
-                            'requestBody': jsonpath.jsonpath(requestBody, '$.content.application/json.schema.$ref')
+                            'query_params': {},
+                            'requestBody': jsonpath.jsonpath(request_body, '$.content.application/json.schema.$ref')
                         }
                         for parameter in parameters:
-                            for key, value in parameter.items():
-                                if key == 'name' and value != "access-token":
-                                    function_data.get("path").append(value)
+                            if parameter.get('in') == 'path':
+                                function_data.get("path").append(parameter.get('name'))
+                            elif parameter.get('in') == 'query':
+                                function_data.get("query_params").update(
+                                    {parameter.get('name'): parameter.get('schema').get('type')})
                         class_data.get('interfaces').append(function_data)
             # 获取所有接口的uri 并且用 / 分割成列表
             uri_list = []
@@ -125,8 +128,6 @@ class SwaggerJSONResolution:
                 k_d = {k: v.get('type')}
                 body.update(k_d)
         return body
-
-
 
     def generate_body(self):
         data = self.clen_data()
