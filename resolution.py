@@ -7,6 +7,7 @@ import json
 import os
 from functools import reduce
 from pathlib import Path
+from typing import Any
 
 import chevron
 import jsonpath
@@ -44,14 +45,14 @@ class SwaggerJSONResolution:
                 tags.append(method_v.get('tags')[0])
         return set(tags)
 
-    def clen_data(self):
+    def analysis_paths(self):
         """
-        清洗数据
+        解析数据，生成文件的摘要信息，文件名、类名、方法名、描述等信息
         :return:
         """
         class_list = []
         for file_name in self.get_interface_tags():
-            class_data = {
+            class_data: dict[str, str | list[Any] | Any] = {
                 'file_name': file_name,
                 'class_name': '',
                 "class_description": 'test',
@@ -96,8 +97,8 @@ class SwaggerJSONResolution:
             class_list.append(class_data)
         return class_list
 
-
     def analysis_components_schemas(self, ref):
+        # 解析数据，生成接口文请求体body信息
         # 递归生成嵌套的请求body
         schema = ref.split('/')[-1]
         schema_d = self.get_swagger_api_docs_response().get('components').get('schemas').get(schema).get('properties')
@@ -114,8 +115,9 @@ class SwaggerJSONResolution:
                 body.update(k_d)
         return body
 
-    def generate_body(self):
-        data = self.clen_data()
+    def merge_data(self):
+        # 合并摘要信息 和 请求体信息
+        data = self.analysis_paths()
         for c in data:
             for interface in c.get('interfaces'):
                 if interface.get('requestBody'):
@@ -127,7 +129,7 @@ class SwaggerJSONResolution:
         生成接口文件
         :return:
         """
-        for class_l in self.generate_body():
+        for class_l in self.merge_data():
             with open('./interface.mustache', 'r') as mustache:
                 interfaces = chevron.render(mustache, class_l)
                 path = Path.cwd()
